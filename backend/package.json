@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Mock API server for PharmaHub (Project 2)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "pharma",
+    "ecommerce",
+    "mock-api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

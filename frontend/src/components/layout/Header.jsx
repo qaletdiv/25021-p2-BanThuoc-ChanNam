@@ -56,7 +56,7 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-blue-800">
-              💊 PharmaHub
+              PharmaHub
             </Link>
           </div>
 
@@ -90,12 +90,11 @@ export default function Header() {
             
             {user ? (
               <>
-                <span className="text-gray-700">Xin chào, {user.name}</span>
                 <Link 
                   href="/my-account" 
                   className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200"
                 >
-                  Tài khoản
+                  Tài khoản của tôi ({user.name})
                 </Link>
                 <button 
                   onClick={handleLogout} 

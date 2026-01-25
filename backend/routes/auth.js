@@ -3,11 +3,11 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { users } from '../data/users.js';
 
-const JWT_SECRET = 'pharma-hub-secret-key'; // ← Thay bằng biến môi trường trong production
+const JWT_SECRET = 'pharma-hub-secret-key'; // 
 
 const router = Router();
 
-// POST /api/auth/register → đăng ký user mới
+// POST /api/auth/register 
 router.post('/register', (req, res) => {
   const { fullname, email, phone, password, confirmPassword } = req.body;
 
@@ -46,7 +46,7 @@ router.post('/register', (req, res) => {
     name: fullname,
     email,
     phone,
-    password, // LƯU Ý: Trong thực tế nên hash password!
+    password, 
     role: 'user',
     createdAt: new Date().toISOString()
   };
@@ -58,7 +58,7 @@ router.post('/register', (req, res) => {
 
   // Tạo JWT token (auto login sau register)
   const token = jwt.sign(
-    { id: newUser.id, email: newUser.email, role: newUser.role },
+    { id: newUser.id, name: user.name, email: newUser.email, role: newUser.role },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -76,7 +76,7 @@ router.post('/register', (req, res) => {
   });
 });
 
-// POST /api/auth/login → trả JWT
+// POST /api/auth/login
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -89,7 +89,7 @@ router.post('/login', (req, res) => {
 
   // Tạo JWT (chỉ chứa thông tin cần thiết)
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role || 'user' },
+    { id: user.id, name: user.name, email: user.email, role: user.role || 'user' },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -106,7 +106,7 @@ router.post('/login', (req, res) => {
   });
 });
 
-// GET /api/auth/me → yêu cầu header Authorization
+// GET /api/auth/me 
 router.get('/me', (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"

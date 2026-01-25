@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { getAuthToken, parseUserFromToken } from '@/lib/auth';
 import { setAuthToken, clearAuthToken } from '@/lib/auth';
+import { fetchCurrentUser } from '@/lib/api';
 
 const AuthContext = createContext();
 
@@ -21,11 +22,20 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const checkAuth = () => {
+  const checkAuth = async () => {
     const token = getAuthToken();
     if (token) {
-      const userData = parseUserFromToken(token);
-      setUser(userData);
+      try {
+        const userData = await fetchCurrentUser();
+        if (userData) {
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        setUser(null);
+      }
     } else {
       setUser(null);
     }

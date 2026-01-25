@@ -18,7 +18,7 @@ function getUserIdFromToken(token) {
 
 const router = Router();
 
-// GET /api/cart → lấy giỏ hàng của user
+// GET /api/cart → lấy giỏ hàng của user với thông tin sản phẩm đầy đủ
 router.get('/', (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -28,7 +28,40 @@ router.get('/', (req, res) => {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  res.json(carts[userId] || []);
+  const userCart = carts[userId] || [];
+  
+  // Thêm thông tin sản phẩm đầy đủ vào mỗi item
+  const cartWithProductInfo = userCart.map(item => {
+    const product = products.find(p => p.id === parseInt(item.productId));
+    
+    if (!product) {
+      // Nếu không tìm thấy sản phẩm, trả về thông tin cơ bản
+      return {
+        ...item,
+        productName: `Sản phẩm ${item.productId}`,
+        productImage: '/images/no-image.png',
+        productCategory: 'Không xác định'
+      };
+    }
+    
+    // Tìm giá từ product units để đảm bảo đúng
+    const productUnit = product.units?.find(u => u.name === item.unit);
+    const actualPrice = productUnit ? productUnit.price : item.price;
+    
+    return {
+      ...item,
+      // Thông tin sản phẩm
+      productName: product.name,
+      productImage: product.image || '/images/no-image.png',
+      productCategory: product.category,
+      productType: product.type,
+      productManufacturer: product.manufacturer,
+      // Cập nhật giá từ product (để đảm bảo đúng)
+      price: actualPrice
+    };
+  });
+
+  res.json(cartWithProductInfo);
 });
 
 // POST /api/cart → thêm sản phẩm vào giỏ

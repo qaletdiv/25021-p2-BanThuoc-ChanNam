@@ -1,9 +1,8 @@
-// frontend/src/app/cart/CartClient.jsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { authFetch } from '@/lib/auth'; // ← Dùng authFetch
+import { authFetch } from '@/lib/auth';
 
 export default function CartClient({ initialCartItems }) {
   const [cartItems, setCartItems] = useState(initialCartItems);
@@ -25,10 +24,6 @@ export default function CartClient({ initialCartItems }) {
         method: 'PUT',
         body: JSON.stringify({ quantity: newQty })
       });
-      
-      // THÊM DÒNG NÀY: Cập nhật số lượng trong Header
-      window.dispatchEvent(new Event('cartUpdated'));
-      
       refreshCart();
     } catch (err) {
       console.error('Failed to update quantity:', err);
@@ -41,10 +36,6 @@ export default function CartClient({ initialCartItems }) {
         await authFetch(`http://localhost:4000/api/cart/${id}`, {
           method: 'DELETE'
         });
-        
-        // THÊM DÒNG NÀY: Cập nhật số lượng trong Header
-        window.dispatchEvent(new Event('cartUpdated'));
-        
         refreshCart();
       } catch (err) {
         console.error('Failed to remove item:', err);
@@ -60,7 +51,6 @@ export default function CartClient({ initialCartItems }) {
         const items = await res.json();
         setCartItems(items);
       } else {
-        // Nếu 401 → chuyển hướng đăng nhập
         if (res.status === 401) {
           localStorage.removeItem('auth_token');
           window.location.href = '/login';
@@ -96,29 +86,37 @@ export default function CartClient({ initialCartItems }) {
             {cartItems.map((item) => (
               <div key={item.id} className="flex items-center gap-4 py-4 border-b border-gray-200 last:border-0">
                 <img
-                  src={`/images/products/med${String(item.productId).padStart(3, '0')}.jpg`}
-                  alt="Product"
+                  src={item.productImage || '/images/no-image.png'}
+                  alt={item.productName}
                   className="w-16 h-16 object-cover rounded"
                   onError={(e) => e.target.src = '/images/no-image.png'}
                 />
                 <div className="flex-1">
-                  <h3 className="font-semibold">Sản phẩm {item.productId}</h3>
-                  <p className="text-sm text-gray-600">Đơn vị: {item.unit}</p>
+                  <h3 className="font-semibold">{item.productName}</h3>
+                  <p className="text-sm text-gray-600">
+                    Đơn vị: {item.unit}
+                    {item.productCategory && ` • ${item.productCategory}`}
+                  </p>
                   <p className="text-green-600 font-bold">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
                   </p>
+                  {item.productType && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${item.productType === 'kedon' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                      {item.productType === 'kedon' ? 'Thuốc kê đơn' : 'Thuốc không kê đơn'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleUpdateQuantity(item.id, -1)}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center"
+                    className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100"
                   >
                     -
                   </button>
                   <span className="w-10 text-center">{item.quantity}</span>
                   <button
                     onClick={() => handleUpdateQuantity(item.id, 1)}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center"
+                    className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100"
                   >
                     +
                   </button>
@@ -129,7 +127,7 @@ export default function CartClient({ initialCartItems }) {
                   </p>
                   <button
                     onClick={() => handleRemoveItem(item.id)}
-                    className="text-red-600 hover:text-red-800 mt-1"
+                    className="text-red-600 hover:text-red-800 mt-1 text-sm"
                   >
                     Xóa
                   </button>

@@ -3,11 +3,11 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { users } from '../data/users.js';
 
-const JWT_SECRET = 'pharma-hub-secret-key'; // 
+const JWT_SECRET = 'pharma-hub-secret-key';
 
 const router = Router();
 
-// POST /api/auth/register 
+// POST /api/auth/register → đăng ký user mới
 router.post('/register', (req, res) => {
   const { fullname, email, phone, password, confirmPassword } = req.body;
 
@@ -28,12 +28,6 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ message: 'Email không hợp lệ' });
   }
 
-  // Check phone format (Vietnam)
-  const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
-  if (!phoneRegex.test(phone)) {
-    return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
-  }
-
   // Check if user already exists
   const existingUser = users.find(u => u.email === email);
   if (existingUser) {
@@ -46,7 +40,7 @@ router.post('/register', (req, res) => {
     name: fullname,
     email,
     phone,
-    password, 
+    password,
     role: 'user',
     createdAt: new Date().toISOString()
   };
@@ -56,9 +50,9 @@ router.post('/register', (req, res) => {
   console.log('New user created:', newUser.id, newUser.email);
   console.log('Total users:', users.length);
 
-  // Tạo JWT token (auto login sau register)
+  // Tạo JWT token
   const token = jwt.sign(
-    { id: newUser.id, name: user.name, email: newUser.email, role: newUser.role },
+    { id: newUser.id, email: newUser.email, role: newUser.role },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -76,7 +70,7 @@ router.post('/register', (req, res) => {
   });
 });
 
-// POST /api/auth/login
+// POST /api/auth/login → trả JWT
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -87,9 +81,9 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ message: 'Email hoặc mật khẩu không chính xác' });
   }
 
-  // Tạo JWT (chỉ chứa thông tin cần thiết)
+  // Tạo JWT
   const token = jwt.sign(
-    { id: user.id, name: user.name, email: user.email, role: user.role || 'user' },
+    { id: user.id, email: user.email, role: user.role || 'user' },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -106,7 +100,7 @@ router.post('/login', (req, res) => {
   });
 });
 
-// GET /api/auth/me 
+// GET /api/auth/me → yêu cầu header Authorization
 router.get('/me', (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"
@@ -135,9 +129,8 @@ router.get('/me', (req, res) => {
   }
 });
 
-// POST /api/auth/logout → không cần xóa gì (JWT stateless)
+// POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  // JWT không thể revoke → client chỉ cần xóa token
   res.json({ success: true });
 });
 

@@ -1,12 +1,22 @@
 // frontend/src/app/logout/page.js
-import { redirect } from 'next/navigation';
+'use client';
 
-export async function GET() {
-  // Gọi API logout ở backend để xóa cookie
-  await fetch('http://localhost:4000/api/auth/logout', {
-    method: 'POST',
-    credentials: 'include',
-  });
-  // Redirect về trang chủ
-  redirect('/');
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function LogoutPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+
+    localStorage.removeItem('auth_token');
+
+    router.push('/');
+  }, [router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      Đang đăng xuất...
+    </div>
+  );
 }

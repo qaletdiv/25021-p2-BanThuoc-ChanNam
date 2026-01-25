@@ -1,7 +1,7 @@
 // src/components/layout/Footer.jsx
 export default function Footer() {
   return (
-    <footer className="bg-red text-white pt-12 pb-6">
+    <footer className="bg-gray-800 text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* About */}
@@ -36,7 +36,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-700 pt-6 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} PharmaHub. All rights reserved.
+          &copy; 2025 PharmaHub. All rights reserved.
         </div>
       </div>
     </footer>

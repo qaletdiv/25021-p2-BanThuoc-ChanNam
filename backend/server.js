@@ -7,7 +7,8 @@ import categoriesRouter from './routes/categories.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';        
 import addressesRouter from './routes/addresses.js'; 
-import ordersRouter from './routes/orders.js';       
+import ordersRouter from './routes/orders.js';
+import cartRouter from './routes/cart.js';       
 
 const app = express();
 const PORT = process.env.PORT || 4000; 
@@ -26,7 +27,8 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);        
 app.use('/api/addresses', addressesRouter); 
-app.use('/api/orders', ordersRouter);      
+app.use('/api/orders', ordersRouter);
+app.use('/api/cart', cartRouter);      
 
 
 app.get('/health', (req, res) => {

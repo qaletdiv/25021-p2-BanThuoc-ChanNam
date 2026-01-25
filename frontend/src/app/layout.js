@@ -1,27 +1,26 @@
 // src/app/layout.js
-import './globals.css';
-import StoreProvider from './StoreProvider';
-import HeaderClient from '@/components/layout/HeaderClient';
+import { Inter } from 'next/font/google';
+import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { getCurrentUser } from '@/lib/auth';
+import { AuthProvider } from '@/context/AuthContext';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'PharmaHub - Nhà thuốc trực tuyến uy tín',
-  description: 'Mua thuốc online an toàn, giao hàng nhanh chóng',
+  title: 'PharmaHub - Nhà thuốc trực tuyến',
+  description: 'Mua thuốc chất lượng cao, giao hàng nhanh chóng',
 };
 
-export default async function RootLayout({ children }) {
-  const user = await getCurrentUser();
-
+export default function RootLayout({ children }) {
   return (
     <html lang="vi">
-      <body>
-        <StoreProvider>
-          {/* Truyền user vào Client Component */}
-          <HeaderClient user={user} />
+      <body className={inter.className}>
+        <AuthProvider>
+          <Header />
           <main className="min-h-screen">{children}</main>
           <Footer />
-        </StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );

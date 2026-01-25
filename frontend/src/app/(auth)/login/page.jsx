@@ -1,39 +1,48 @@
-// src/app/(auth)/login/page.jsx
+// frontend/src/app/(auth)/login/page.jsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext'; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
+  const { login } = useAuth(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
-      // Gọi API từ backend Express.js (port 4000)
       const res = await fetch('http://localhost:4000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: 'include', // Cho phép gửi cookie
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        // Đăng nhập thành công → redirect
-        router.push('/');
+
+        login(data.token, data.user);
+        
+
+        const returnUrl = sessionStorage.getItem('returnUrl') || '/';
+        sessionStorage.removeItem('returnUrl');
+        router.push(returnUrl);
       } else {
         setError(data.message || 'Đăng nhập thất bại');
       }
     } catch (err) {
-      console.error(err);
-      setError('Không thể kết nối đến server. Vui lòng kiểm tra backend.');
+      setError('Không thể kết nối đến server');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,6 +60,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              disabled={loading}
             />
           </div>
           <div className="mb-6">
@@ -61,17 +71,21 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              disabled={loading}
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
           >
-            Đăng nhập
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="/register" className="text-blue-600 hover:underline">Chưa có tài khoản? Đăng ký</a>
+          <a href="/register" className="text-blue-600 hover:underline">
+            Chưa có tài khoản? Đăng ký
+          </a>
         </div>
       </div>
     </div>

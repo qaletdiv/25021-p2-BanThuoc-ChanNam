@@ -5,7 +5,7 @@ import uiReducer from './slices/uiSlice';
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      ui: uiReducer, // ← Thêm reducer hợp lệ
+      ui: uiReducer,
     },
   });
 };

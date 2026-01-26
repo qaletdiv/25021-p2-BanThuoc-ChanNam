@@ -7,23 +7,21 @@ const JWT_SECRET = 'PHARMAHUB_SECRET_KEY';
 
 const router = Router();
 
-// Middleware xác thực JWT
+// ✅ Thêm middleware authenticateJWT
 const authenticateJWT = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies.access_token; // ← Đọc từ cookie
 
-  if (authHeader) {
-    const token = authHeader.split(' ')[1]; // "Bearer <token>"
-    
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).json({ message: 'Invalid token' });
-      }
-      req.user = user;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
   }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
 };
 
 // POST /api/auth/login → đăng nhập
@@ -32,14 +30,12 @@ router.post('/login', (req, res) => {
 
   console.log('Login attempt for email:', email);
 
-  // Tìm user theo email
   const user = users.find(u => u.email === email && u.password === password);
   
   if (!user) {
     return res.status(401).json({ message: 'Email hoặc mật khẩu không chính xác' });
   }
 
-  // Tạo token
   const accessToken = jwt.sign(
     { 
       id: user.id, 
@@ -50,9 +46,17 @@ router.post('/login', (req, res) => {
     { expiresIn: '7d' }
   );
 
+  // Gửi token qua cookie
+  res.cookie('access_token', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'strict',
+    path: '/',
+  });
+
   res.json({
     success: true,
-    accessToken,
     user: {
       id: user.id,
       name: user.name,
@@ -66,9 +70,6 @@ router.post('/login', (req, res) => {
 router.post('/register', (req, res) => {
   const { fullname, email, phone, password, confirmPassword } = req.body;
 
-  console.log('Register request received:', { fullname, email, phone });
-
-  // Validation
   if (!fullname || !email || !phone || !password || !confirmPassword) {
     return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin' });
   }
@@ -77,19 +78,16 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ message: 'Mật khẩu không khớp' });
   }
 
-  // Check email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ message: 'Email không hợp lệ' });
   }
 
-  // Check if user already exists
   const existingUser = users.find(u => u.email === email);
   if (existingUser) {
     return res.status(409).json({ message: 'Email đã được sử dụng' }); 
   }
 
-  // Create new user
   const newUser = {
     id: users.length + 1,
     name: fullname,
@@ -102,20 +100,23 @@ router.post('/register', (req, res) => {
 
   users.push(newUser);
 
-  console.log('New user created:', newUser.id, newUser.email);
-  console.log('Total users:', users.length);
-
-  // Tạo token
   const accessToken = jwt.sign(
     { id: newUser.id, email: newUser.email, role: newUser.role },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
 
+  res.cookie('access_token', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'strict',
+    path: '/',
+  });
+
   res.status(201).json({
     success: true,
     message: 'Đăng ký thành công!',
-    accessToken, 
     user: {
       id: newUser.id,
       name: newUser.name,
@@ -147,37 +148,16 @@ router.get('/me', authenticateJWT, (req, res) => {
 
 // POST /api/auth/logout → logout
 router.post('/logout', (req, res) => {
-  res.json({ success: true, message: 'Logged out successfully' });
-});
-
-// POST /api/auth/refresh → refresh token 
-router.post('/refresh', (req, res) => {
-  const { token } = req.body;
-  
-  if (!token) {
-    return res.status(400).json({ message: 'Token is required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid token' });
-    }
-
-    // Tạo token mới
-    const newToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      success: true,
-      accessToken: newToken
-    });
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
   });
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 export default router;
 
-// Export middleware
+// ✅ EXPORT middleware
 export { authenticateJWT };

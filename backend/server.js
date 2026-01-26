@@ -1,7 +1,7 @@
 // backend/server.js
 import express from 'express';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser'; // ← Đã có
 import productsRouter from './routes/products.js';
 import categoriesRouter from './routes/categories.js';
 import authRouter from './routes/auth.js';
@@ -13,14 +13,12 @@ import cartRouter from './routes/cart.js';
 const app = express();
 const PORT = process.env.PORT || 4000; 
 
-
 app.use(cors({
   origin: 'http://localhost:3000', 
-  credentials: true 
+  credentials: true // ← Quan trọng
 }));
 app.use(express.json());
-app.use(cookieParser());
-
+app.use(cookieParser()); // ← Quan trọng
 
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);
@@ -30,17 +28,14 @@ app.use('/api/addresses', addressesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/cart', cartRouter);      
 
-
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });
 });
-
 
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ message: 'Internal Server Error' });
 });
-
 
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });

@@ -1,8 +1,8 @@
+// frontend/src/context/AuthContext.jsx
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getAuthToken, parseUserFromToken } from '@/lib/auth';
-import { setAuthToken, clearAuthToken } from '@/lib/auth';
+import { getAuthToken, parseUserFromToken, setAuthToken, clearAuthToken } from '@/lib/auth'; // Đã có clearAuthToken
 import { fetchCurrentUser } from '@/lib/api';
 
 const AuthContext = createContext();
@@ -12,55 +12,67 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
-    checkAuth();
-    
-
-    const handleStorageChange = () => checkAuth();
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  const checkAuth = async () => {
-    const token = getAuthToken();
-    if (token) {
-      try {
-        const userData = await fetchCurrentUser();
-        if (userData) {
-          setUser(userData);
-        } else {
+    const loadUser = async () => {
+      const token = getAuthToken();
+      
+      if (token) {
+        // Parse từ token để hiển thị nhanh
+        const parsedUser = parseUserFromToken(token);
+        if (parsedUser) {
+          setUser(parsedUser);
+        }
+        
+        // Fetch từ server để xác thực
+        try {
+          const serverUser = await fetchCurrentUser();
+          if (serverUser) {
+            setUser(serverUser);
+          } else {
+            // Token không hợp lệ
+            clearAuthToken();
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+          clearAuthToken();
           setUser(null);
         }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
+      } else {
         setUser(null);
       }
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  };
+      
+      setLoading(false);
+    };
+
+    loadUser();
+  }, []);
 
   const login = (token, userData) => {
     setAuthToken(token);
     setUser(userData);
-    window.dispatchEvent(new Event('storage'));
   };
 
   const logout = () => {
-    clearAuthToken(); 
+    clearAuthToken(); // Sử dụng clearAuthToken
     setUser(null);
-    window.dispatchEvent(new Event('storage'));
+  };
+
+  const updateUser = (userData) => {
+    setUser(prev => ({ ...prev, ...userData }));
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      logout, 
+      updateUser,
+      isAuthenticated: !!user 
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

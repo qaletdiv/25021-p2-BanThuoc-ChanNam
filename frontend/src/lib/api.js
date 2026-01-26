@@ -48,3 +48,32 @@ export async function fetchCartCount() {
     return 0;
   }
 }
+
+export async function fetchOrders() {
+  const res = await authFetch(`${API_BASE}/orders`);
+  if (!res.ok) throw new Error('Failed to fetch orders');
+  return res.json();
+}
+
+export async function fetchOrderById(id) {
+  const res = await authFetch(`${API_BASE}/orders/${id}`);
+  if (!res.ok) throw new Error('Order not found');
+  return res.json();
+}
+
+export async function createOrder(orderData) {
+  const res = await authFetch(`${API_BASE}/orders`, {
+    method: 'POST',
+    body: JSON.stringify(orderData)
+  });
+  if (!res.ok) throw new Error('Failed to create order');
+  return res.json();
+}
+
+export async function cancelOrder(orderId) {
+  const res = await authFetch(`${API_BASE}/orders/${orderId}/cancel`, {
+    method: 'PUT'
+  });
+  if (!res.ok) throw new Error('Failed to cancel order');
+  return res.json();
+}

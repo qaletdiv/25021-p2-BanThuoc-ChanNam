@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext'; 
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -17,11 +18,12 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { login } = useAuth(); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Xóa lỗi khi người dùng gõ
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -64,13 +66,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccess('');
+    setErrors({});
     const newErrors = validate();
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setIsSubmitting(true);
+    
     try {
       const res = await fetch('http://localhost:4000/api/auth/register', {
         method: 'POST',
@@ -87,16 +92,34 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
+        // Auto login sau khi register
+        login(data.accessToken, data.user); 
+        setSuccess('Đăng ký thành công! Đang chuyển hướng...');
+        
         // Reset form
-        setFormData({ fullname: '', email: '', phone: '', password: '', confirmPassword: '' });
-        // Chuyển hướng sau 2 giây
-        setTimeout(() => router.push('/login'), 2000);
+        setFormData({ 
+          fullname: '', 
+          email: '', 
+          phone: '', 
+          password: '', 
+          confirmPassword: '' 
+        });
+        
+        // Chuyển hướng về trang chủ sau 1.5 giây
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+        
       } else {
-        setErrors({ submit: data.message || 'Đăng ký thất bại. Vui lòng thử lại.' });
+        setErrors({ 
+          submit: data.message || 'Đăng ký thất bại. Vui lòng thử lại.' 
+        });
       }
     } catch (err) {
-      setErrors({ submit: 'Không thể kết nối đến server. Vui lòng kiểm tra backend.' });
+      console.error('Register error:', err);
+      setErrors({ 
+        submit: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -115,28 +138,36 @@ export default function RegisterPage() {
               <h2 className="text-xl font-bold mb-4">Lợi ích khi tạo tài khoản</h2>
               <ul className="space-y-3">
                 <li className="flex items-start">
-                  <span className="text-green-600 mr-2">•</span>
-                  <span>Theo dõi đơn hàng và lịch sử mua sắm</span>
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Theo dõi đơn hàng và lịch sử mua sắm</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-600 mr-2">•</span>
-                  <span>Nhận thông báo khuyến mãi sớm</span>
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Nhận thông báo khuyến mãi sớm</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-600 mr-2">•</span>
-                  <span>Lưu danh sách sản phẩm yêu thích</span>
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Lưu danh sách sản phẩm yêu thích</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-600 mr-2">•</span>
-                  <span>Hỗ trợ khách hàng ưu tiên</span>
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Hỗ trợ khách hàng ưu tiên</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Đánh giá sản phẩm đã mua</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="font-medium">Lưu nhiều địa chỉ giao hàng</span>
                 </li>
               </ul>
-              <div className="mt-6">
-                <img
-                  src="https://placehold.co/400x200?text=Khuyến+mãi+đặc+biệt"
-                  alt="Khuyến mãi"
-                  className="w-full rounded"
-                />
+              
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-bold text-blue-800 mb-2">Ưu đãi đặc biệt</h3>
+                <p className="text-blue-700 text-sm">
+                  Đăng ký ngay để nhận <span className="font-bold">mã giảm giá 10%</span> cho đơn hàng đầu tiên!
+                </p>
               </div>
             </div>
           </div>
@@ -146,10 +177,15 @@ export default function RegisterPage() {
             <div className="bg-white p-6 rounded-lg shadow">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {errors.submit && (
-                  <div className="bg-red-100 text-red-700 p-3 rounded">{errors.submit}</div>
+                  <div className="bg-red-100 text-red-700 p-3 rounded border border-red-200">
+                    <span className="font-medium">Lỗi: </span>{errors.submit}
+                  </div>
                 )}
+                
                 {success && (
-                  <div className="bg-green-100 text-green-700 p-3 rounded">{success}</div>
+                  <div className="bg-green-100 text-green-700 p-3 rounded border border-green-200">
+                    <span className="font-medium">Thành công: </span>{success}
+                  </div>
                 )}
 
                 <div>
@@ -160,10 +196,15 @@ export default function RegisterPage() {
                     name="fullname"
                     value={formData.fullname}
                     onChange={handleChange}
-                    className={`w-full p-2 border rounded ${errors.fullname ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full p-3 border rounded-lg ${errors.fullname ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                     placeholder="Nhập họ và tên"
+                    disabled={isSubmitting}
                   />
-                  {errors.fullname && <p className="text-red-500 text-sm mt-1">{errors.fullname}</p>}
+                  {errors.fullname && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <span className="mr-1">⚠</span> {errors.fullname}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -174,10 +215,15 @@ export default function RegisterPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full p-2 border rounded ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="Nhập địa chỉ email"
+                    className={`w-full p-3 border rounded-lg ${errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                    placeholder="example@email.com"
+                    disabled={isSubmitting}
                   />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <span className="mr-1">⚠</span> {errors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -188,10 +234,15 @@ export default function RegisterPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className={`w-full p-2 border rounded ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="Nhập số điện thoại"
+                    className={`w-full p-3 border rounded-lg ${errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                    placeholder="0901234567"
+                    disabled={isSubmitting}
                   />
-                  {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                  {errors.phone && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <span className="mr-1">⚠</span> {errors.phone}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -202,10 +253,15 @@ export default function RegisterPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full p-2 border rounded ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="Nhập mật khẩu"
+                    className={`w-full p-3 border rounded-lg ${errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                    placeholder="Ít nhất 6 ký tự"
+                    disabled={isSubmitting}
                   />
-                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <span className="mr-1">⚠</span> {errors.password}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -216,26 +272,48 @@ export default function RegisterPage() {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className={`w-full p-2 border rounded ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full p-3 border rounded-lg ${errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                     placeholder="Nhập lại mật khẩu"
+                    disabled={isSubmitting}
                   />
-                  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center">
+                      <span className="mr-1">⚠</span> {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
+
+                {/* <div className="text-sm text-gray-600">
+                  <p>Bằng việc đăng ký, bạn đồng ý với <Link href="/terms" className="text-blue-600 hover:underline">Điều khoản sử dụng</Link> và <Link href="/privacy" className="text-blue-600 hover:underline">Chính sách bảo mật</Link> của chúng tôi.</p>
+                </div> */}
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full py-2 rounded font-bold text-white ${
-                    isSubmitting ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'
+                  className={`w-full py-3 rounded-lg font-bold text-white transition-colors ${
+                    isSubmitting 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
-                  {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Đang xử lý...
+                    </span>
+                  ) : 'Đăng ký'}
                 </button>
 
-                <div className="text-center mt-4">
+                <div className="text-center pt-4 border-t">
                   <p className="text-gray-600">
                     Đã có tài khoản?{' '}
-                    <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                    <Link 
+                      href="/login" 
+                      className="text-blue-600 hover:underline font-medium"
+                    >
                       Đăng nhập ngay
                     </Link>
                   </p>

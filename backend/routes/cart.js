@@ -1,32 +1,15 @@
 // backend/routes/cart.js
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
+import { authenticateJWT } from './auth.js'; // Import middleware
 import { products } from '../data/products.js';
 
-const JWT_SECRET = 'pharma-hub-secret-key';
-const carts = {}; // In-memory: carts[userId] = [items]
-
-function getUserIdFromToken(token) {
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded.id;
-  } catch {
-    return null;
-  }
-}
+const carts = {}; // In-memory storage: carts[userId] = [items]
 
 const router = Router();
 
-// GET /api/cart → lấy giỏ hàng của user với thông tin sản phẩm đầy đủ
-router.get('/', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+// GET /api/cart → lấy giỏ hàng với thông tin sản phẩm đầy đủ
+router.get('/', authenticateJWT, (req, res) => {
+  const userId = req.user.id; // Lấy từ middleware authenticateJWT
 
   const userCart = carts[userId] || [];
   
@@ -56,7 +39,7 @@ router.get('/', (req, res) => {
       productCategory: product.category,
       productType: product.type,
       productManufacturer: product.manufacturer,
-      // Cập nhật giá từ product (để đảm bảo đúng)
+      // Cập nhật giá từ product
       price: actualPrice
     };
   });
@@ -65,15 +48,8 @@ router.get('/', (req, res) => {
 });
 
 // POST /api/cart → thêm sản phẩm vào giỏ
-router.post('/', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
+router.post('/', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
   const { productId, unit, quantity } = req.body;
 
   // Validate input
@@ -96,64 +72,90 @@ router.post('/', (req, res) => {
   // Khởi tạo giỏ nếu chưa có
   if (!carts[userId]) carts[userId] = [];
 
-  // Kiểm tra trùng lặp
+  // Kiểm tra trùng lặp (cùng productId VÀ cùng unit)
   const existingItem = carts[userId].find(
     item => item.productId === productId && item.unit === unit
   );
 
   if (existingItem) {
-    existingItem.quantity += quantity;
+    existingItem.quantity += parseInt(quantity);
   } else {
     carts[userId].push({
       id: Date.now().toString(),
       productId,
       unit,
-      quantity,
+      quantity: parseInt(quantity),
       price: validUnit.price // ← Lấy từ server, không tin tưởng client
     });
   }
 
-  res.status(201).json({ success: true });
+  res.status(201).json({ 
+    success: true,
+    message: 'Đã thêm vào giỏ hàng'
+  });
 });
 
 // PUT /api/cart/:id → cập nhật số lượng
-router.put('/:id', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
+router.put('/:id', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
   const { id } = req.params;
   const { quantity } = req.body;
 
-  if (!carts[userId]) return res.status(404).json({ message: 'Giỏ hàng không tồn tại' });
+  if (!carts[userId]) {
+    return res.status(404).json({ message: 'Giỏ hàng không tồn tại' });
+  }
 
   const itemIndex = carts[userId].findIndex(item => item.id === id);
-  if (itemIndex === -1) return res.status(404).json({ message: 'Sản phẩm không tìm thấy' });
+  if (itemIndex === -1) {
+    return res.status(404).json({ message: 'Sản phẩm không tìm thấy trong giỏ hàng' });
+  }
 
   if (quantity <= 0) {
     carts[userId].splice(itemIndex, 1);
   } else {
-    carts[userId][itemIndex].quantity = quantity;
+    carts[userId][itemIndex].quantity = parseInt(quantity);
   }
 
-  res.json({ success: true });
+  res.json({ 
+    success: true,
+    message: 'Đã cập nhật giỏ hàng'
+  });
 });
 
 // DELETE /api/cart/:id → xóa sản phẩm
-router.delete('/:id', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
+router.delete('/:id', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
   const { id } = req.params;
-  if (!carts[userId]) return res.status(404).json({ message: 'Giỏ hàng không tồn tại' });
 
+  if (!carts[userId]) {
+    return res.status(404).json({ message: 'Giỏ hàng không tồn tại' });
+  }
+
+  const initialLength = carts[userId].length;
   carts[userId] = carts[userId].filter(item => item.id !== id);
-  res.json({ success: true });
+  
+  if (carts[userId].length === initialLength) {
+    return res.status(404).json({ message: 'Sản phẩm không tìm thấy trong giỏ hàng' });
+  }
+
+  res.json({ 
+    success: true,
+    message: 'Đã xóa sản phẩm khỏi giỏ hàng'
+  });
+});
+
+// DELETE /api/cart → xóa toàn bộ giỏ hàng
+router.delete('/', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
+  
+  if (carts[userId]) {
+    delete carts[userId];
+  }
+
+  res.json({ 
+    success: true,
+    message: 'Đã xóa toàn bộ giỏ hàng'
+  });
 });
 
 export default router;

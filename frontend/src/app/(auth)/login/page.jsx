@@ -3,21 +3,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext'; 
+import { useAuth } from '@/context/AuthContext'; // Sử dụng AuthContext
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth(); 
+  const { login } = useAuth(); // Lấy hàm login từ context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
       const res = await fetch('http://localhost:4000/api/auth/login', {
@@ -29,20 +28,16 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-
-        login(data.token, data.user);
-        
-
-        const returnUrl = sessionStorage.getItem('returnUrl') || '/';
-        sessionStorage.removeItem('returnUrl');
-        router.push(returnUrl);
+        // Sử dụng AuthContext để login
+        login(data.accessToken, data.user);
+        router.push('/');
       } else {
         setError(data.message || 'Đăng nhập thất bại');
       }
     } catch (err) {
       setError('Không thể kết nối đến server');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -60,7 +55,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded"
               required
-              disabled={loading}
+              disabled={isLoading}
             />
           </div>
           <div className="mb-6">
@@ -71,15 +66,17 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded"
               required
-              disabled={loading}
+              disabled={isLoading}
             />
           </div>
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+            disabled={isLoading}
+            className={`w-full py-2 rounded font-bold text-white ${
+              isLoading ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
         <div className="mt-4 text-center">

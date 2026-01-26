@@ -1,12 +1,45 @@
+// frontend/src/app/(marketing)/cart/CartClient.jsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { authFetch } from '@/lib/auth';
 
-export default function CartClient({ initialCartItems }) {
-  const [cartItems, setCartItems] = useState(initialCartItems);
-  const [isLoading, setIsLoading] = useState(false);
+export default function CartClient() {
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      setLoading(true);
+      try {
+        const res = await authFetch('http://localhost:4000/api/cart');
+
+        if (res.status === 401) {
+          // Không có quyền → về login
+          router.push('/login');
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to fetch cart');
+
+        const items = await res.json();
+        setCartItems(items);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [router]);
+
+  if (loading) return <div className="container mx-auto px-4 py-8">Đang tải...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8">Lỗi: {error}</div>;
 
   // Tính toán
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -14,6 +47,7 @@ export default function CartClient({ initialCartItems }) {
   const totalPrice = subtotal + shippingCost;
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Handle update/remove functions using authFetch
   const handleUpdateQuantity = async (id, delta) => {
     const item = cartItems.find(i => i.id === id);
     if (!item) return;
@@ -22,9 +56,15 @@ export default function CartClient({ initialCartItems }) {
     try {
       await authFetch(`http://localhost:4000/api/cart/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ quantity: newQty })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: newQty }),
       });
-      refreshCart();
+      // Refresh cart
+      const res = await authFetch('http://localhost:4000/api/cart');
+      if (res.ok) {
+        const items = await res.json();
+        setCartItems(items);
+      }
     } catch (err) {
       console.error('Failed to update quantity:', err);
     }
@@ -34,32 +74,17 @@ export default function CartClient({ initialCartItems }) {
     if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
       try {
         await authFetch(`http://localhost:4000/api/cart/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
         });
-        refreshCart();
+        // Refresh cart
+        const res = await authFetch('http://localhost:4000/api/cart');
+        if (res.ok) {
+          const items = await res.json();
+          setCartItems(items);
+        }
       } catch (err) {
         console.error('Failed to remove item:', err);
       }
-    }
-  };
-
-  const refreshCart = async () => {
-    setIsLoading(true);
-    try {
-      const res = await authFetch('http://localhost:4000/api/cart');
-      if (res.ok) {
-        const items = await res.json();
-        setCartItems(items);
-      } else {
-        if (res.status === 401) {
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
-        }
-      }
-    } catch (err) {
-      console.error('Failed to refresh cart');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -100,11 +125,6 @@ export default function CartClient({ initialCartItems }) {
                   <p className="text-green-600 font-bold">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
                   </p>
-                  {item.productType && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${item.productType === 'kedon' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                      {item.productType === 'kedon' ? 'Thuốc kê đơn' : 'Thuốc không kê đơn'}
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -171,23 +191,6 @@ export default function CartClient({ initialCartItems }) {
             >
               Tiếp tục mua sắm
             </Link>
-
-            {/* Thông báo miễn phí vận chuyển */}
-            <div className="mt-6 p-3 bg-green-50 rounded border border-green-200">
-              <div className="flex items-center gap-2">
-                <span>🚚</span>
-                <div>
-                  <p className="font-medium text-green-800">
-                    {subtotal >= 500000 ? '✅ Miễn phí vận chuyển!' : 'Thêm sản phẩm để được miễn phí vận chuyển'}
-                  </p>
-                  {subtotal < 500000 && (
-                    <p className="text-sm text-green-700">
-                      Thêm {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(500000 - subtotal)} để được miễn phí
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

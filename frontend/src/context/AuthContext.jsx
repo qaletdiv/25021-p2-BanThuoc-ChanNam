@@ -2,8 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getAuthToken, parseUserFromToken, setAuthToken, clearAuthToken } from '@/lib/auth'; // Đã có clearAuthToken
-import { fetchCurrentUser } from '@/lib/api';
+import { checkAuth, logout as apiLogout } from '@/lib/auth';
 
 const AuthContext = createContext();
 
@@ -13,47 +12,26 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const loadUser = async () => {
-      const token = getAuthToken();
-      
-      if (token) {
-        // Parse từ token để hiển thị nhanh
-        const parsedUser = parseUserFromToken(token);
-        if (parsedUser) {
-          setUser(parsedUser);
-        }
-        
-        // Fetch từ server để xác thực
-        try {
-          const serverUser = await fetchCurrentUser();
-          if (serverUser) {
-            setUser(serverUser);
-          } else {
-            // Token không hợp lệ
-            clearAuthToken();
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user:', error);
-          clearAuthToken();
-          setUser(null);
-        }
-      } else {
+      try {
+        const userData = await checkAuth();
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to load user:', error);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     loadUser();
   }, []);
 
-  const login = (token, userData) => {
-    setAuthToken(token);
+  const login = (userData) => {
     setUser(userData);
   };
 
   const logout = () => {
-    clearAuthToken(); // Sử dụng clearAuthToken
+    apiLogout();
     setUser(null);
   };
 

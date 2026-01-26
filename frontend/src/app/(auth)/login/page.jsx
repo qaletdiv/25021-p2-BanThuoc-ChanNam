@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext'; // Sử dụng AuthContext
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth(); // Lấy hàm login từ context
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,14 +22,14 @@ export default function LoginPage() {
       const res = await fetch('http://localhost:4000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ← Gửi cookie nếu có
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        // Sử dụng AuthContext để login
-        login(data.accessToken, data.user);
+        login(data.user); // ← Chỉ truyền user, không có token
         router.push('/');
       } else {
         setError(data.message || 'Đăng nhập thất bại');

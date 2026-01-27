@@ -18,6 +18,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,8 +78,13 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
           method: 'DELETE',
         });
 
-        // Chuyển đến trang xác nhận đơn hàng
-        router.push(`/order-confirmation?id=${result.orderId}`);
+        // Hiển thị thông báo thành công
+        setShowSuccess(true);
+        
+        // Chuyển hướng đến xác nhận đơn hàng sau 2 giây
+        setTimeout(() => {
+          router.push(`/order-confirmation?id=${result.orderId}`);
+        }, 2000);
       } else {
         const error = await res.json();
         setErrors({ submit: error.message || 'Không thể đặt hàng' });
@@ -89,6 +95,27 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
       setIsSubmitting(false);
     }
   };
+
+  if (showSuccess) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">Đặt hàng thành công!</h2>
+            <p className="text-gray-600 mb-6">Đang chuyển đến trang xác nhận đơn hàng...</p>
+            <div className="w-48 h-1 bg-gray-200 rounded-full mx-auto">
+              <div className="h-1 bg-green-600 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -110,6 +137,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                     onChange={handleChange}
                     className={`w-full p-3 border rounded-lg ${errors.recipientName ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Nhập họ tên người nhận"
+                    disabled={isSubmitting}
                   />
                   {errors.recipientName && <p className="text-red-500 text-sm mt-1">{errors.recipientName}</p>}
                 </div>
@@ -122,6 +150,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                     onChange={handleChange}
                     className={`w-full p-3 border rounded-lg ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Nhập số điện thoại"
+                    disabled={isSubmitting}
                   />
                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                 </div>
@@ -134,6 +163,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                     rows="3"
                     className={`w-full p-3 border rounded-lg ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Nhập địa chỉ nhận hàng"
+                    disabled={isSubmitting}
                   ></textarea>
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>
@@ -152,6 +182,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                     checked={formData.paymentMethod === 'cod'}
                     onChange={handleChange}
                     className="w-4 h-4"
+                    disabled={isSubmitting}
                   />
                   <div>
                     <div className="font-medium">Thanh toán khi nhận hàng (COD)</div>
@@ -166,6 +197,7 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                     checked={formData.paymentMethod === 'bank_transfer'}
                     onChange={handleChange}
                     className="w-4 h-4"
+                    disabled={isSubmitting}
                   />
                   <div>
                     <div className="font-medium">Chuyển khoản ngân hàng</div>
@@ -241,12 +273,23 @@ export default function CheckoutClient({ initialCart, initialUser, initialTotals
                 isSubmitting ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
               }`}
             >
-              {isSubmitting ? 'Đang xử lý...' : 'Đặt hàng ngay'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang xử lý...
+                </span>
+              ) : 'Đặt hàng ngay'}
             </button>
 
             <Link
               href="/cart"
-              className="w-full block mt-3 py-2 text-center rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="w-full block mt-3 py-2 text-center rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              onClick={(e) => {
+                if (isSubmitting) e.preventDefault();
+              }}
             >
               Quay lại giỏ hàng
             </Link>

@@ -1,7 +1,7 @@
 // backend/server.js
 import express from 'express';
 import cors from 'cors';
-import cookieParser from 'cookie-parser'; // ← Đã có
+import cookieParser from 'cookie-parser';
 import productsRouter from './routes/products.js';
 import categoriesRouter from './routes/categories.js';
 import authRouter from './routes/auth.js';
@@ -15,10 +15,10 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors({
   origin: 'http://localhost:3000', 
-  credentials: true // ← Quan trọng
+  credentials: true
 }));
 app.use(express.json());
-app.use(cookieParser()); // ← Quan trọng
+app.use(cookieParser()); 
 
 app.use('/api/products', productsRouter);
 app.use('/api/categories', categoriesRouter);

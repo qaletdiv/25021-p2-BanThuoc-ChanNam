@@ -2,49 +2,43 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = 'pharma-hub-secret-key';
-let addresses = []; // Giả lập từ data/addresses.js
+const JWT_SECRET = 'PHARMAHUB_SECRET_KEY';
+let addresses = [];
 
-// Helper: load dữ liệu mẫu (nếu cần)
 import { addresses as mockAddresses } from '../data/addresses.js';
 addresses = [...mockAddresses];
 
-function getUserIdFromToken(token) {
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded.id;
-  } catch {
-    return null;
+// Middleware xác thực từ cookie
+const authenticateJWT = (req, res, next) => {
+  const token = req.cookies.access_token;
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
   }
-}
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+};
 
 const router = Router();
 
 // GET /api/addresses → lấy địa chỉ của user
-router.get('/', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
+router.get('/', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
+  
   const userAddresses = addresses.filter(a => a.userId == userId);
   res.json(userAddresses);
 });
 
 // POST /api/addresses → thêm địa chỉ mới
-router.post('/', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
+router.post('/', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
+  
   const { recipientName, recipientPhone, fullAddress, isDefault } = req.body;
 
   if (!recipientName || !recipientPhone || !fullAddress) {
@@ -73,13 +67,8 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/addresses/:id → cập nhật địa chỉ
-router.put('/:id', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
+router.put('/:id', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
   const { id } = req.params;
   const { recipientName, recipientPhone, fullAddress, isDefault } = req.body;
 
@@ -106,14 +95,10 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/addresses/:id → xóa địa chỉ
-router.delete('/:id', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  const userId = getUserIdFromToken(token);
-
-  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
+router.delete('/:id', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
   const { id } = req.params;
+  
   const initialLength = addresses.length;
   addresses = addresses.filter(a => !(a.id === id && a.userId == userId));
 
@@ -125,3 +110,5 @@ router.delete('/:id', (req, res) => {
 });
 
 export default router;
+
+export { authenticateJWT };

@@ -1,4 +1,3 @@
-//frontend/src/components/layout/Header.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,12 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCart } from '@/lib/cart'; 
+
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const router = useRouter();
-  const { user, logout } = useAuth();
-
+  const { user, logout, isAdmin } = useAuth();
 
   useEffect(() => {
     const loadCartCount = async () => {
@@ -88,20 +87,86 @@ export default function Header() {
               Sản phẩm
             </Link>
             
+            {/* Hiển thị link Admin Dashboard nếu là admin */}
+            {isAdmin && (
+              <Link 
+                href="/admin/dashboard" 
+                className="bg-red-100 text-red-800 px-3 py-1.5 rounded-md hover:bg-red-200 font-medium border border-red-200"
+              >
+                Quản trị
+              </Link>
+            )}
+            
             {user ? (
               <>
-                <Link 
-                  href="/my-account" 
-                  className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200"
-                >
-                  Tài khoản của tôi ({user.name})
-                </Link>
-                <button 
-                  onClick={handleLogout} 
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Đăng xuất
-                </button>
+                {/* Tài khoản với hiển thị role */}
+                <div className="relative group">
+                  <button 
+                    className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200 flex items-center gap-2"
+                  >
+                    <span>{user.name}</span>
+                    {isAdmin && (
+                      <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
+                        Admin
+                      </span>
+                    )}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  
+                  {/* Dropdown menu */}
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
+                    <Link 
+                      href="/my-account" 
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Tài khoản của tôi
+                    </Link>
+                    <Link 
+                      href="/orders" 
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Đơn hàng
+                    </Link>
+                    {isAdmin && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link 
+                          href="/admin/dashboard" 
+                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
+                        >
+                          Dashboard quản trị
+                        </Link>
+                        <Link 
+                          href="/admin/products" 
+                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
+                        >
+                          Quản lý sản phẩm
+                        </Link>
+                        <Link 
+                          href="/admin/orders" 
+                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
+                        >
+                          Quản lý đơn hàng
+                        </Link>
+                        <Link 
+                          href="/admin/users" 
+                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
+                        >
+                          Quản lý người dùng
+                        </Link>
+                      </>
+                    )}
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button 
+                      onClick={handleLogout} 
+                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <>
@@ -117,13 +182,18 @@ export default function Header() {
               </>
             )}
             
+            {/* Giỏ hàng */}
             <Link href="/cart" className="relative hover:text-blue-600">
-              🛒
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
+              <div className="relative">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </div>
             </Link>
           </nav>
         </div>

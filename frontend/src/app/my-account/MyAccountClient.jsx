@@ -359,7 +359,6 @@ export default function MyAccountClient({ user, orders, addresses: initialAddres
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -372,14 +371,6 @@ export default function MyAccountClient({ user, orders, addresses: initialAddres
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
                       {getStatusText(order.status)}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link 
-                      href={`/order-details/${order.id}`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Chi tiết
-                    </Link>
                   </td>
                 </tr>
               ))}

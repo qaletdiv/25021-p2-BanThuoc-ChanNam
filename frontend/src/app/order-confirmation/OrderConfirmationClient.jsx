@@ -1,4 +1,3 @@
-// frontend/src/app/order-confirmation/OrderConfirmationClient.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,12 +5,14 @@ import Link from 'next/link';
 
 export default function OrderConfirmationClient({ order }) {
   const [countdown, setCountdown] = useState(10);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
+          window.location.href = '/';
           return 0;
         }
         return prev - 1;
@@ -20,6 +21,14 @@ export default function OrderConfirmationClient({ order }) {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Hàm đảm bảo giá trị số hợp lệ
+  const getNumberValue = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return 0;
+    }
+    return Number(value);
+  };
 
   const getStatusText = (status) => {
     const map = {
@@ -44,12 +53,21 @@ export default function OrderConfirmationClient({ order }) {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND' 
+    }).format(amount);
   };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
+
+  // Tính toán giá trị đảm bảo hợp lệ
+  const subtotal = getNumberValue(order.subtotal);
+  const shippingCost = getNumberValue(order.shippingCost);
+  const discount = getNumberValue(order.discount);
+  const totalPrice = getNumberValue(order.totalPrice) || (subtotal + shippingCost - discount);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -89,11 +107,11 @@ export default function OrderConfirmationClient({ order }) {
             <h2 className="text-xl font-bold mb-4">Thông tin giao hàng</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="font-semibold">{order.recipientName}</p>
-                <p className="text-gray-600">{order.phone}</p>
+                <p className="font-semibold">{order.recipientName || 'Không có thông tin'}</p>
+                <p className="text-gray-600">{order.phone || 'Chưa cập nhật'}</p>
               </div>
               <div>
-                <p className="text-gray-600">{order.address}</p>
+                <p className="text-gray-600">{order.address || 'Chưa cập nhật địa chỉ'}</p>
               </div>
             </div>
           </div>
@@ -131,7 +149,7 @@ export default function OrderConfirmationClient({ order }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item, index) => (
+                  {order.items && order.items.map((item, index) => (
                     <tr key={index} className="border-b">
                       <td className="py-3">
                         <div className="flex items-center gap-3">
@@ -147,7 +165,9 @@ export default function OrderConfirmationClient({ order }) {
                       <td className="text-center py-3">{item.unit}</td>
                       <td className="text-center py-3">{item.quantity}</td>
                       <td className="text-right py-3">{formatCurrency(item.price)}</td>
-                      <td className="text-right py-3 font-semibold">{formatCurrency(item.price * item.quantity)}</td>
+                      <td className="text-right py-3 font-semibold">
+                        {formatCurrency(getNumberValue(item.price) * getNumberValue(item.quantity))}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -161,19 +181,19 @@ export default function OrderConfirmationClient({ order }) {
               <div className="w-full max-w-xs">
                 <div className="flex justify-between py-2">
                   <span>Tạm tính:</span>
-                  <span>{formatCurrency(order.subtotal)}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span>Phí vận chuyển:</span>
-                  <span>{formatCurrency(order.shippingCost)}</span>
+                  <span>{formatCurrency(shippingCost)}</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span>Giảm giá:</span>
-                  <span className="text-red-600">-{formatCurrency(order.discount)}</span>
+                  <span className="text-red-600">-{formatCurrency(discount)}</span>
                 </div>
                 <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
                   <span>Tổng cộng:</span>
-                  <span className="text-green-600">{formatCurrency(order.totalPrice)}</span>
+                  <span className="text-green-600">{formatCurrency(totalPrice)}</span>
                 </div>
               </div>
             </div>
@@ -182,10 +202,10 @@ export default function OrderConfirmationClient({ order }) {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/my-orders"
+              href="/my-account"
               className="px-6 py-3 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Xem đơn hàng của tôi
+              Xem tài khoản của tôi
             </Link>
             <Link
               href="/"

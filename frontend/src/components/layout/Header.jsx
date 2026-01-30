@@ -89,19 +89,33 @@ export default function Header() {
             
             {/* Hiển thị link Admin Dashboard nếu là admin */}
             {isAdmin && (
-              <Link 
-                href="/admin/dashboard" 
-                className="bg-red-100 text-red-800 px-3 py-1.5 rounded-md hover:bg-red-200 font-medium border border-red-200"
-              >
-                Quản trị
-              </Link>
+              <>
+                <Link 
+                  href="/admin/dashboard" 
+                  className="bg-red-100 text-red-800 px-3 py-1.5 rounded-md hover:bg-red-200 font-medium border border-red-200"
+                >
+                  Quản trị
+                </Link>
+                <Link 
+                  href="/admin/products" 
+                  className="bg-red-50 text-red-700 px-3 py-1.5 rounded-md hover:bg-red-100"
+                >
+                  Sản phẩm
+                </Link>
+                <Link 
+                  href="/admin/orders" 
+                  className="bg-red-50 text-red-700 px-3 py-1.5 rounded-md hover:bg-red-100"
+                >
+                  Đơn hàng
+                </Link>
+              </>
             )}
             
             {user ? (
               <>
-                {/* Tài khoản với hiển thị role */}
-                <div className="relative group">
-                  <button 
+                <div className="flex items-center gap-2">
+                  <Link 
+                    href="/my-account?tab=orders" 
                     className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200 flex items-center gap-2"
                   >
                     <span>{user.name}</span>
@@ -110,62 +124,15 @@ export default function Header() {
                         Admin
                       </span>
                     )}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
+                  </Link>
                   
-                  {/* Dropdown menu */}
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
-                    <Link 
-                      href="/my-account" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    >
-                      Tài khoản của tôi
-                    </Link>
-                    <Link 
-                      href="/orders" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    >
-                      Đơn hàng
-                    </Link>
-                    {isAdmin && (
-                      <>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <Link 
-                          href="/admin/dashboard" 
-                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
-                        >
-                          Dashboard quản trị
-                        </Link>
-                        <Link 
-                          href="/admin/products" 
-                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
-                        >
-                          Quản lý sản phẩm
-                        </Link>
-                        <Link 
-                          href="/admin/orders" 
-                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
-                        >
-                          Quản lý đơn hàng
-                        </Link>
-                        <Link 
-                          href="/admin/users" 
-                          className="block px-4 py-2 text-red-700 hover:bg-red-50"
-                        >
-                          Quản lý người dùng
-                        </Link>
-                      </>
-                    )}
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button 
-                      onClick={handleLogout} 
-                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                    >
-                      Đăng xuất
-                    </button>
-                  </div>
+                  {/* Nút đăng xuất */}
+                  <button 
+                    onClick={handleLogout} 
+                    className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 hover:text-red-600"
+                  >
+                    Đăng xuất
+                  </button>
                 </div>
               </>
             ) : (

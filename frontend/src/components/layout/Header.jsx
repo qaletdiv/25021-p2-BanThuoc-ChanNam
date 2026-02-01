@@ -9,6 +9,7 @@ import { fetchCart } from '@/lib/cart';
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); 
   const router = useRouter();
   const { user, logout, isAdmin } = useAuth();
 
@@ -43,9 +44,19 @@ export default function Header() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    try {
+      await logout(); 
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -87,7 +98,7 @@ export default function Header() {
               Sản phẩm
             </Link>
             
-            {/* Hiển thị link Admin Dashboard nếu là admin */}
+            {/* Admin Links */}
             {isAdmin && (
               <>
                 <Link 
@@ -112,29 +123,28 @@ export default function Header() {
             )}
             
             {user ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Link 
-                    href="/my-account?tab=orders" 
-                    className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200 flex items-center gap-2"
-                  >
-                    <span>{user.name}</span>
-                    {isAdmin && (
-                      <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
-                        Admin
-                      </span>
-                    )}
-                  </Link>
-                  
-                  {/* Nút đăng xuất */}
-                  <button 
-                    onClick={handleLogout} 
-                    className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 hover:text-red-600"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
-              </>
+              <div className="flex items-center gap-2">
+                <Link 
+                  href="/my-account?tab=orders" 
+                  className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-200 flex items-center gap-2"
+                >
+                  <span>{user.name}</span>
+                  {isAdmin && (
+                    <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
+                      Admin
+                    </span>
+                  )}
+                </Link>
+                
+                {/* Nút đăng xuất */}
+                <button 
+                  onClick={handleLogout} 
+                  disabled={isLoggingOut}
+                  className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoggingOut ? 'Đang xử lý...' : 'Đăng xuất'}
+                </button>
+              </div>
             ) : (
               <>
                 <Link href="/login" className="hover:text-blue-600">
@@ -149,7 +159,7 @@ export default function Header() {
               </>
             )}
             
-            {/* Giỏ hàng */}
+            {/* Cart */}
             <Link href="/cart" className="relative hover:text-blue-600">
               <div className="relative">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

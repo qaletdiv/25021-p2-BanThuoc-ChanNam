@@ -19,9 +19,15 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // Set pathname header for Header component
-  const response = NextResponse.next();
-  response.headers.set('x-pathname', pathname);
+  // Set pathname as request header so Server Components can read it via headers()
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   // Public routes (no authentication required)
   const publicRoutes = [

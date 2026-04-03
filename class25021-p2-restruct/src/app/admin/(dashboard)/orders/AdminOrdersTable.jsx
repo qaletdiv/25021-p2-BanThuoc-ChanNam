@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { updateOrderStatusAction } from '@/actions/orders';
+import { updateOrderStatusAction } from '@/actions/admin-orders';
 
 export default function AdminOrdersTable({ initialOrders }) {
   const [orders, setOrders] = useState(initialOrders);

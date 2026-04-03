@@ -176,3 +176,50 @@ export async function cancelOrderAction(orderId) {
     return { success: false, message: 'Lỗi kết nối server' };
   }
 }
+
+// Admin: Get all orders
+export async function getAllOrders() {
+  try {
+    const cookie = await getCookieHeader();
+    const res = await fetch(`${API_URL}/orders`, {
+      headers: {
+        Cookie: cookie,
+      },
+      cache: 'no-store',
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+    return [];
+  } catch (error) {
+    console.error('Failed to fetch all orders:', error);
+    return [];
+  }
+}
+
+// Admin: Update order status
+export async function updateOrderStatusAction(orderId, status) {
+  try {
+    const cookie = await getCookieHeader();
+    const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookie,
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (res.ok) {
+      const response = await res.json();
+      return { success: true, order: response.order };
+    }
+
+    const error = await res.json();
+    return { success: false, message: error.message };
+  } catch (error) {
+    console.error('Update order status failed:', error);
+    return { success: false, message: 'Lỗi kết nối server' };
+  }
+}

@@ -1,7 +1,7 @@
 // Admin Orders Page - Server Component
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getAllOrders } from '@/actions/admin-orders';
+import { getAllOrders } from '@/actions/orders';
 import AdminOrdersTable from './AdminOrdersTable';
 
 async function checkAdminAccess() {
